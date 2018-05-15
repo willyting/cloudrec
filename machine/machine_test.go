@@ -27,3 +27,24 @@ func TestRunServer_hello(t *testing.T) {
 		t.Error("response incorrect")
 	}
 }
+func TestRunServer_hello_8080_port(t *testing.T) {
+	go RunServer(8080)
+	resp, err := http.Get("http://localhost:8080/")
+	if err != nil {
+		t.Error(err)
+	}
+	if resp.StatusCode != 200 {
+		t.Error("get a error status")
+	}
+	defer resp.Body.Close()
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(contents) <= 0 {
+		t.Error("no response")
+	}
+	if string(contents) != "hello world" {
+		t.Error("response incorrect")
+	}
+}
