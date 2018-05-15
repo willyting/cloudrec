@@ -3,6 +3,8 @@ package machine
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Route is basic struct to add to router
@@ -15,14 +17,15 @@ type Route struct {
 
 // RunServer start a http server on X port
 func RunServer(port int) {
-	http.HandleFunc("/", helloword)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("GET").Path("/").Name("hello").Handler(http.HandlerFunc(helloworld))
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), router)
 	if err != nil {
 		fmt.Print("init fail :", err)
 	}
 }
 
-func helloword(w http.ResponseWriter, r *http.Request) {
+func helloworld(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello world")
 }
 
