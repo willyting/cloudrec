@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -59,7 +60,7 @@ func TestRunServer_hello_bad_port(t *testing.T) {
 	go server.Run(-1)
 }
 
-/*func TestAddHandlers(t *testing.T) {
+func TestAddHandlers(t *testing.T) {
 	server := NewServer()
 	server.AddHandlers([]Route{
 		Route{"hello", "GET", "/hello", func(w http.ResponseWriter, r *http.Request) {
@@ -67,6 +68,7 @@ func TestRunServer_hello_bad_port(t *testing.T) {
 		}},
 	})
 	go server.Run(80)
+	defer server.stop()
 	resp, err := http.Get("http://localhost:80/hello")
 	if err != nil {
 		t.Error(err)
@@ -86,4 +88,3 @@ func TestRunServer_hello_bad_port(t *testing.T) {
 		t.Error("response incorrect")
 	}
 }
-*/
