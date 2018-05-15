@@ -18,6 +18,7 @@ type Route struct {
 // Server ...
 type Server struct {
 	router *mux.Router
+	server *http.Server
 }
 
 // NewServer ...
@@ -30,10 +31,15 @@ func NewServer() *Server {
 // Run start a http server on X port
 func (s *Server) Run(port int) {
 	s.router.Methods("GET").Path("/").Name("hello").Handler(http.HandlerFunc(helloworld))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), s.router)
+	s.server = &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: s.router}
+	err := s.server.ListenAndServe()
 	if err != nil {
 		fmt.Print("init fail :", err)
 	}
+}
+
+func (s *Server) stop() {
+	s.server.Close()
 }
 
 func helloworld(w http.ResponseWriter, r *http.Request) {

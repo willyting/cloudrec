@@ -9,6 +9,7 @@ import (
 func TestRunServer_hello(t *testing.T) {
 	server := NewServer()
 	go server.Run(80)
+	defer server.stop()
 	resp, err := http.Get("http://localhost:80/")
 	if err != nil {
 		t.Error(err)
@@ -31,6 +32,7 @@ func TestRunServer_hello(t *testing.T) {
 func TestRunServer_hello_8080_port(t *testing.T) {
 	server := NewServer()
 	go server.Run(8080)
+	defer server.stop()
 	resp, err := http.Get("http://localhost:8080/")
 	if err != nil {
 		t.Error(err)
@@ -51,18 +53,20 @@ func TestRunServer_hello_8080_port(t *testing.T) {
 	}
 }
 
+// TODO : check the server log
 func TestRunServer_hello_bad_port(t *testing.T) {
 	server := NewServer()
 	go server.Run(-1)
 }
 
 /*func TestAddHandlers(t *testing.T) {
-	AddHandlers([]Route{
+	server := NewServer()
+	server.AddHandlers([]Route{
 		Route{"hello", "GET", "/hello", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "hello world")
 		}},
 	})
-	go RunServer(80)
+	go server.Run(80)
 	resp, err := http.Get("http://localhost:80/hello")
 	if err != nil {
 		t.Error(err)
@@ -81,4 +85,5 @@ func TestRunServer_hello_bad_port(t *testing.T) {
 	if string(contents) != "hello world" {
 		t.Error("response incorrect")
 	}
-}*/
+}
+*/
