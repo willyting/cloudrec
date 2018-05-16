@@ -14,9 +14,9 @@
         * THEN: get response "hello world"
 1. gacha
     1. A handle suport url `/recstorage/{cameraID}?p={filename}` with GET method. Resposne a media file
-        * GIVE: cameraID = "test", filename = "test"
+        * GIVE: cameraID = "test", filename = "test.txt", userID="user" in header
         * WHEN: send a request to a test http handler
-        * THEN: get response with a file in payload, file content is "test"
+        * THEN: get response with a file in payload, file is the same on `S3:bucket/{userID}/{cameraID}/{filename}`
     1. get error when no filename
         * GIVE: cameraID = "test", filename = ""
         * WHEN: send a request to a test http handler
