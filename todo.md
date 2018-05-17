@@ -15,13 +15,16 @@
 1. gacha
     1. A handle suport url `/recstorage/{cameraID}?p={filename}` with GET method. Resposne a media file
         * GIVE: cameraID = "test", filename = "test.txt", userID="user" in header
-        * WHEN: send a request to a test http handler
+        * WHEN: send a get file request
         * THEN: get response with a file in payload, file is the same on `S3:bucket/{userID}/{cameraID}/{filename}`
     1. get error when no filename
         * GIVE: cameraID = "test", filename = ""
         * WHEN: send a request to a test http handler
         * THEN: get a 400 response
+    1. A handle suport url `/recstorage/{cameraID}?p={filename}` with POST method. Put a media file to storage
+        * GIVE: cameraID = "test" and filename = "test.txt" in URL, userID="user" in header
+        * WHEN: send a put file request
+        * THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
     1. A API will return a route with many API handler
-    1. A handle suport url `/recstorage/{cameraID}?p={filename}` with POST method.
 1. storage
     1. a writer interface wrapper getObject SDK API.

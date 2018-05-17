@@ -19,7 +19,7 @@ type Downloader interface {
 
 // Uploader ...
 type Uploader interface {
-	Upload(*FileInfo, io.ReadSeeker) error
+	Upload(*FileInfo, io.Reader) error
 }
 
 // Storage ...
