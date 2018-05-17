@@ -3,6 +3,7 @@ package gacha
 import (
 	"GaChaMachine/mocks"
 	"GaChaMachine/storage"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,9 +21,9 @@ func TestGetRec(t *testing.T) {
 	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockUploader := mocks.NewMockDownloader(mockCtrl)
-	cloud.Dlwonload = mockUploader
-	mockUploader.EXPECT().Download(&storage.FileInfo{
+	mockStroage := mocks.NewMockDownloader(mockCtrl)
+	cloud.Dlwonload = mockStroage
+	mockStroage.EXPECT().Download(&storage.FileInfo{
 		FileName: "user/test/test.txt",
 	}, gomock.Any()).
 		Return(nil).Do(func(f *storage.FileInfo, w io.Writer) {
@@ -44,5 +45,49 @@ func TestGetRec(t *testing.T) {
 	if string(buf) != expected {
 		t.Errorf("handler returned unexpected body: got %s want %s",
 			string(buf), expected)
+	}
+}
+
+func TestPutRec(t *testing.T) {
+	// setup server handle
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("POST").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(PutRec)
+
+	// setup mock storage
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockStroage := mocks.NewMockUploader(mockCtrl)
+	cloud.Upload = mockStroage
+	mockStroage.EXPECT().Upload(&storage.FileInfo{
+		FileName: "user/test/test.txt",
+	}, gomock.Any()).
+		Return(nil).Do(func(f *storage.FileInfo, r io.Reader) {
+		// THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
+		expected := "test"
+		stroageBuf, errF := ioutil.ReadAll(r)
+		if errF != nil {
+			t.Errorf(errF.Error())
+		}
+		if string(stroageBuf) != expected {
+			t.Errorf("incorrect file got: %s, want: %s", string(stroageBuf), expected)
+		}
+	})
+
+	// GIVE: cameraID = "test" and filename = "test.txt" in URL, userID="user" in header
+	body := bytes.NewReader([]byte("test"))
+	req, err := http.NewRequest("POST", "http://localhost/recstorage/test?p=test.txt", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("X-identityID", "user")
+	rr := httptest.NewRecorder()
+
+	// WHEN: send a put file request
+	router.ServeHTTP(rr, req)
+
+	// THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %d want %d",
+			status, http.StatusOK)
 	}
 }

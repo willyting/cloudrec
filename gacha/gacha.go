@@ -9,10 +9,10 @@ import (
 
 var cloud storage.Storage
 
-func setupStorage(upload storage.Uploader, dlwonload storage.Downloader) {
-	cloud.Upload = upload
-	cloud.Dlwonload = dlwonload
-}
+// func setupStorage(upload storage.Uploader, dlwonload storage.Downloader) {
+// 	cloud.Upload = upload
+// 	cloud.Dlwonload = dlwonload
+// }
 
 // GetRec ...
 func GetRec(w http.ResponseWriter, r *http.Request) {
@@ -23,4 +23,16 @@ func GetRec(w http.ResponseWriter, r *http.Request) {
 	cloud.Dlwonload.Download(&storage.FileInfo{
 		FileName: userID + "/" + cameraID + "/" + filePath,
 	}, w)
+}
+
+// PutRec ...
+func PutRec(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cameraID := vars["cameraid"]
+	userID := r.Header.Get("X-identityID")
+	filePath := r.URL.Query().Get("p")
+	cloud.Upload.Upload(&storage.FileInfo{
+		FileName: userID + "/" + cameraID + "/" + filePath,
+	}, r.Body)
+	r.Body.Close()
 }
