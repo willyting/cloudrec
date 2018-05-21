@@ -23,7 +23,7 @@ type Uploader interface {
 }
 
 // Storage ...
-type Storage struct {
-	Upload    Uploader
-	Dlwonload Downloader
+type Storage interface {
+	GetUploader() Uploader
+	GetDownloader() Downloader
 }
