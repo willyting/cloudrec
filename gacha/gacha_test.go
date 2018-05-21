@@ -16,13 +16,26 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
+type mockStorage struct {
+	Up   storage.Uploader
+	Down storage.Downloader
+}
+
+func (m *mockStorage) GetUploader() storage.Uploader {
+	return m.Up
+}
+func (m *mockStorage) GetDownloader() storage.Downloader {
+	return m.Down
+}
+
 func TestGetRec(t *testing.T) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockStroage := mocks.NewMockDownloader(mockCtrl)
-	cloud.Dlwonload = mockStroage
+	testCloud := &mockStorage{Down: mockStroage}
+	cloud = testCloud
 	mockStroage.EXPECT().Download(&storage.FileInfo{
 		FileName: "user/test/test.txt",
 	}, gomock.Any()).
@@ -57,7 +70,8 @@ func TestPutRec(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	mockStroage := mocks.NewMockUploader(mockCtrl)
-	cloud.Upload = mockStroage
+	testCloud := &mockStorage{Up: mockStroage}
+	cloud = testCloud
 	mockStroage.EXPECT().Upload(&storage.FileInfo{
 		FileName: "user/test/test.txt",
 	}, gomock.Any()).

@@ -20,7 +20,7 @@ func GetRec(w http.ResponseWriter, r *http.Request) {
 	cameraID := vars["cameraid"]
 	userID := r.Header.Get("X-identityID")
 	filePath := r.URL.Query().Get("p")
-	cloud.Dlwonload.Download(&storage.FileInfo{
+	cloud.GetDownloader().Download(&storage.FileInfo{
 		FileName: userID + "/" + cameraID + "/" + filePath,
 	}, w)
 }
@@ -31,7 +31,7 @@ func PutRec(w http.ResponseWriter, r *http.Request) {
 	cameraID := vars["cameraid"]
 	userID := r.Header.Get("X-identityID")
 	filePath := r.URL.Query().Get("p")
-	cloud.Upload.Upload(&storage.FileInfo{
+	cloud.GetUploader().Upload(&storage.FileInfo{
 		FileName: userID + "/" + cameraID + "/" + filePath,
 	}, r.Body)
 	r.Body.Close()
