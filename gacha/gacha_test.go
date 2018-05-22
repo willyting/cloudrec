@@ -19,6 +19,7 @@ import (
 type mockStorage struct {
 	Up   storage.Uploader
 	Down storage.Downloader
+	List storage.Lister
 }
 
 func (m *mockStorage) GetUploader() storage.Uploader {
@@ -26,6 +27,9 @@ func (m *mockStorage) GetUploader() storage.Uploader {
 }
 func (m *mockStorage) GetDownloader() storage.Downloader {
 	return m.Down
+}
+func (m *mockStorage) GetLister() storage.Lister {
+	return m.List
 }
 
 func TestGetRec(t *testing.T) {
@@ -103,5 +107,45 @@ func TestPutRec(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %d want %d",
 			status, http.StatusOK)
+	}
+}
+
+func TestListDb(t *testing.T) {
+	// setup mock module
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockStroage := mocks.NewMockLister(mockCtrl)
+	testCloud := &mockStorage{List: mockStroage}
+	cloud = testCloud
+
+	// * THEN: get ok response and db list from `S3:bucket/{userID}/{cameraID}/{dates}*` in json fromat
+	mockStroage.EXPECT().List(&storage.FileInfo{
+		FileName: "user/test/2018-05-08",
+	}).Return([]string{
+		"user/test/2018-05-08/001/2018-05-08.db",
+		"user/test/2018-05-08/002/2018-05-08.db",
+		"user/test/2018-05-08/003/2018-05-08.db"}, nil)
+
+	// * GIVE: cameraID = "test", start day = "2018-05-08", end day ="2018-05-11" in URL, userID="user" in header
+	req, err := http.NewRequest("GET", "http://localhost/recstorage/test/date?s=2018-05-08&e=2018-05-08", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Add("X-identityID", "user")
+	rr := httptest.NewRecorder()
+	// * WHEN: send query db list request
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("GET").Path("/recstorage/{cameraid}/date").Name("test").HandlerFunc(ListDb)
+	router.ServeHTTP(rr, req)
+	// * THEN: get ok response and db list from `S3:bucket/{userID}/{cameraID}/{dates}*` in json fromat
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %d want %d",
+			status, http.StatusOK)
+	}
+	expected := "{\"2018-05-08\":[\"user/test/2018-05-08/001/2018-05-08.db\",\"user/test/2018-05-08/002/2018-05-08.db\",\"user/test/2018-05-08/003/2018-05-08.db\"],}"
+	buf, err := ioutil.ReadAll(rr.Body)
+	if string(buf) != expected {
+		t.Errorf("handler returned unexpected body: got %s want %s",
+			string(buf), expected)
 	}
 }

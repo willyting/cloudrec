@@ -22,8 +22,14 @@ type Uploader interface {
 	Upload(*FileInfo, io.Reader) error
 }
 
+// Lister ...
+type Lister interface {
+	List(*FileInfo) ([]string, error)
+}
+
 // Storage ...
 type Storage interface {
 	GetUploader() Uploader
 	GetDownloader() Downloader
+	GetLister() Lister
 }

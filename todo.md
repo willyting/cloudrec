@@ -29,6 +29,10 @@
         * GIVE: cameraID = "test" and filename = "test.txt" in URL, userID="user" in header
         * WHEN: send a put file request
         * THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
+    1. A handle suport url `/recstorage/{cameraID}/date?s={startDay}&e={endDay}` with GET method. to get the list of db files. assume prifx of filename is date
+        * GIVE: cameraID = "test", start day = "2018-05-08", end day ="2018-05-08" in URL, userID="user" in header
+        * WHEN: send query db list request
+        * THEN: get ok response and db list from `S3:bucket/{userID}/{cameraID}/{dates}*` in json fromat
     1. A API will return a route with many API handler
     1. read config file to set regain and bucket
 1. storage
