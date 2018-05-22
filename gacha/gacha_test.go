@@ -142,7 +142,7 @@ func TestListDb(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %d want %d",
 			status, http.StatusOK)
 	}
-	expected := "{\"2018-05-08\":[\"user/test/2018-05-08/001/2018-05-08.db\",\"user/test/2018-05-08/002/2018-05-08.db\",\"user/test/2018-05-08/003/2018-05-08.db\"],}"
+	expected := "{\"2018-05-08\":[\"2018-05-08/001/2018-05-08.db\",\"2018-05-08/002/2018-05-08.db\",\"2018-05-08/003/2018-05-08.db\"]}"
 	buf, err := ioutil.ReadAll(rr.Body)
 	if string(buf) != expected {
 		t.Errorf("handler returned unexpected body: got %s want %s",

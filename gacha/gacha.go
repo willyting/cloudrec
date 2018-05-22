@@ -2,8 +2,10 @@ package gacha
 
 import (
 	"GaChaMachine/storage"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -42,5 +44,42 @@ func PutRec(w http.ResponseWriter, r *http.Request) {
 
 // ListDb ...
 func ListDb(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "tbd")
+	vars := mux.Vars(r)
+	cameraID := vars["cameraid"]
+	userID := r.Header.Get("X-identityID")
+	startDate := r.URL.Query().Get("s")
+	endDate := r.URL.Query().Get("e")
+	lister := cloud.GetLister()
+	start, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
+	if start.After(end) {
+		tmp := start
+		start = end
+		end = tmp
+	}
+	recList := make(map[string][]string)
+	base := userID + "/" + cameraID + "/"
+	for !start.After(end) {
+		curDate := start.Format("2006-01-02")
+		list, err := lister.List(&storage.FileInfo{
+			FileName: base + curDate,
+		})
+		if err != nil {
+			fmt.Fprint(w, err)
+			break
+		}
+		for i := range list {
+			list[i] = list[i][len(base):len(list[i])]
+		}
+		recList[curDate] = list
+		break
+	}
+	result, err := json.Marshal(recList)
+	fmt.Fprint(w, string(result))
 }
