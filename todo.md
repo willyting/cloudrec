@@ -14,7 +14,11 @@
         * THEN: get response "hello world"
 1. gacha
     1. A handle suport url `/recstorage/{cameraID}?p={filename}` with GET method. Resposne a media file
-        * GIVE: cameraID = "test", filename = "test.txt", userID="user" in header
+        * GIVE: cameraID = "test", filename = "test.txt", userID="user"
+        * WHEN: send a get file request.
+        * THEN: get response with a file in payload, file is the same on `S3:bucket/{userID}/{cameraID}/{filename}`
+    1. A handle suport url `/recstorage/{cameraID}?p={filename}` with GET method and credential. Resposne a media file
+        * GIVE: cameraID = "test", filename = "test.txt", userID="user", credential in header
         * WHEN: send a get file request.
         * THEN: get response with a file in payload, file is the same on `S3:bucket/{userID}/{cameraID}/{filename}`
     1. get error when no filename
@@ -33,11 +37,14 @@
         * GIVE: call new storage API
         * THEN: get a storage structure with download()/upload() func
     1. a s3 downloader API wrapper getObject() from AWS SDK
-        * GIVE: a file info(Bucket, filename). and a reader 
+        * GIVE: a file info(Bucket="test", filename="test/test.txt") and a writer
         * WHEN: call download API
-        * THEN: can read file data from reader
+        * THEN: write got file data="test" to writer
     1. API to get a new s3 client
         * GIVE: Region, AccessKeyID, SecretKey, SessionToken
         * GIVE: call connect API
         * THEN: get a client structure with s3 API func
     1. a s3 uploader API wrapper putObject() from SDK API.
+        * GIVE: a file info(Bucket="test", filename="test/test.txt") and a reader
+        * WHEN: call download API
+        * THEN: put file data="test" from reader to s3
