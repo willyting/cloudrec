@@ -31,9 +31,13 @@
     1. API to get a new storage
         * GIVE: none
         * GIVE: call new storage API
-        * THEN: get a storage structure with connect()/download()/upload() func
-    1. a downloader interface wrapper getObject SDK API.
-        * GIVE: a file info. and a reader
+        * THEN: get a storage structure with download()/upload() func
+    1. a s3 downloader API wrapper getObject() from AWS SDK
+        * GIVE: a file info(Bucket, filename). and a reader 
         * WHEN: call download API
         * THEN: can read file data from reader
-    1. a uploader interface wrapper putObject SDK API.
+    1. API to get a new s3 client
+        * GIVE: Region, AccessKeyID, SecretKey, SessionToken
+        * GIVE: call connect API
+        * THEN: get a client structure with s3 API func
+    1. a s3 uploader API wrapper putObject() from SDK API.

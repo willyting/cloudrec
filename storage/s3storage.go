@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -53,6 +55,42 @@ func (s *S3Client) Download(file *FileInfo, writeTo io.Writer) error {
 	})
 	_, err = io.Copy(writeTo, out.Body)
 	out.Body.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Upload ...
+func (s *S3Client) Upload(file *FileInfo, readFrom io.Reader) error {
+	client, err := s.Connect(file)
+	if err != nil {
+		return err
+	}
+	if client == nil {
+		return fmt.Errorf("create client fail")
+	}
+	buffer, err := ioutil.ReadAll(readFrom)
+	// localFilename := filepath.Join("/mnt/tmp",
+	// 	strings.Replace(file.FileName, "/", ".", -1))
+	// writer, err := os.OpenFile(localFilename, os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	readseeker := bytes.NewReader(buffer)
+	// _, err = io.Copy(writer, readFrom)
+	if err != nil {
+		return err
+	}
+	// writer.Close()
+	// tmpFile, err := os.Open(localFilename)
+	if err != nil {
+		return err
+	}
+	_, err = client.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(file.Bucket),
+		Body:   io.ReadSeeker(readseeker),
+		Key:    aws.String(file.FileName)})
 	if err != nil {
 		return err
 	}
