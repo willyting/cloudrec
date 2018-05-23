@@ -14,11 +14,6 @@ import (
 
 var cloud storage.Storage
 
-// func setupStorage(upload storage.Uploader, dlwonload storage.Downloader) {
-// 	cloud.Upload = upload
-// 	cloud.Dlwonload = dlwonload
-// }
-
 // GetRec ...
 func GetRec(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -50,6 +45,7 @@ func ListDb(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("s")
 	endDate := r.URL.Query().Get("e")
 	lister := cloud.GetLister()
+
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
 		fmt.Fprint(w, err)
