@@ -71,19 +71,13 @@ func (s *S3Client) Upload(file *FileInfo, readFrom io.Reader) error {
 		return fmt.Errorf("create client fail")
 	}
 	buffer, err := ioutil.ReadAll(readFrom)
-	// localFilename := filepath.Join("/mnt/tmp",
-	// 	strings.Replace(file.FileName, "/", ".", -1))
-	// writer, err := os.OpenFile(localFilename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
 	readseeker := bytes.NewReader(buffer)
-	// _, err = io.Copy(writer, readFrom)
 	if err != nil {
 		return err
 	}
-	// writer.Close()
-	// tmpFile, err := os.Open(localFilename)
 	if err != nil {
 		return err
 	}
@@ -95,6 +89,11 @@ func (s *S3Client) Upload(file *FileInfo, readFrom io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+// List ...
+func (s *S3Client) List(file *FileInfo) ([]string, error) {
+	return nil, fmt.Errorf("TBD")
 }
 
 // Connect ...

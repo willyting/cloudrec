@@ -83,6 +83,14 @@ func TestListDb(t *testing.T) {
 			"{}", 200},
 		{"no-db-first-last-day", req{"http://localhost/recstorage/test/date?s=2018-05-05&e=2018-05-07", "user"},
 			"{\"2018-05-06\":[\"2018-05-06/1/t.db\",\"2018-05-06/2/t.db\",\"2018-05-06/3/t.db\"]}", 200},
+		{"miss-e", req{"http://localhost/recstorage/test/date?s=2018-11-08", "user"},
+			"parameter error\n", 400},
+		{"miss-s", req{"http://localhost/recstorage/test/date?e=2018-11-08", "user"},
+			"parameter error\n", 400},
+		{"miss-user", req{"http://localhost/recstorage/test/date?s=2018-11-08&e=2018-11-08", ""},
+			"401 permission denied\n", 401},
+		{"miss-cameraid", req{"http://localhost/recstorage/date?e=2018-11-08", "user"},
+			"404 page not found\n", 404},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -92,7 +100,7 @@ func TestListDb(t *testing.T) {
 				t.Errorf("handler returned wrong status code: got %d want %d", status, tt.wantStatus)
 			}
 			if gotBody := rr.Body.String(); gotBody != tt.want {
-				t.Errorf("handler returned unexpected body: got \n%s want \n%s", gotBody, tt.want)
+				t.Errorf("handler returned unexpected body: got \n%s \nwant \n%s", gotBody, tt.want)
 			}
 		})
 	}

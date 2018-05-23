@@ -1,82 +1,81 @@
-package storage_test
+package storage
 
 import (
-	"GaChaMachine/mocks"
-	"GaChaMachine/storage"
-	"bytes"
-	"io/ioutil"
-	"strings"
+	"GaChaMachine/mock_s3_sdk"
+	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/golang/mock/gomock"
 )
 
-//go:generate $GOPATH/bin/mockgen -destination src/GaChaMachine/mocks/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
-
-type mockS3Connecter struct {
-	MockClient *mocks.MockS3API
-}
-
-func (s *mockS3Connecter) Connect(file *storage.FileInfo) (s3iface.S3API, error) {
-	return s.MockClient, nil
-}
-
-func TestDownload(t *testing.T) {
-	testFilename := "test/test.txt"
-	expected := "test"
+func TestS3Client_List(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	mockClient := mocks.NewMockS3API(mockCtrl)
-	connector := &mockS3Connecter{MockClient: mockClient}
-	testDownloader := &storage.S3Client{Connecter: connector}
-	writer := new(bytes.Buffer)
-	mockClient.EXPECT().GetObject(&s3.GetObjectInput{
-		Key: &testFilename,
-	}).Return(&s3.GetObjectOutput{Body: ioutil.NopCloser(strings.NewReader(expected))}, nil)
-	err := testDownloader.Download(&storage.FileInfo{
-		FileName: "test/test.txt",
-	}, writer)
-	if err != nil {
-		t.Errorf("api return error: %s", err.Error())
+	testList := &S3Client{Connecter: &mockS3Connecter{MockClient: createMockS3List(mockCtrl)}}
+	type args struct {
+		file *FileInfo
 	}
-	if writer.String() != expected {
-		t.Errorf("file contant fail: got %s, want %s", writer.String(), expected)
+	tests := []struct {
+		name    string
+		s       *S3Client
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{"one-file", testList, args{&FileInfo{FileName: "user/test/2018-05-11"}},
+			[]string{"user/test/2018-05-11/1/t.db"}, false},
 	}
-}
-
-func TestUpload(t *testing.T) {
-	var err error
-	testFilename := "test/test.txt"
-	expected := "test"
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-	mockClient := mocks.NewMockS3API(mockCtrl)
-	connector := &mockS3Connecter{MockClient: mockClient}
-	testClient := &storage.S3Client{Connecter: connector}
-	fileContant := strings.NewReader(expected)
-	mockClient.EXPECT().PutObject(gomock.Any()).Return(&s3.PutObjectOutput{}, nil).
-		Do(func(in *s3.PutObjectInput) {
-			if *(in.Key) != testFilename {
-				t.Errorf("intput file name errror, got %s, want %s", *(in.Key), testFilename)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.List(tt.args.file)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("S3Client.List() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			contant, err := ioutil.ReadAll(in.Body)
-			if err != nil {
-				t.Errorf("read buffer fail : %s", err.Error())
-			}
-			if string(contant) != expected {
-				t.Errorf("put object api, got %s want %s", contant, expected)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("S3Client.List() = %v, want %v", got, tt.want)
 			}
 		})
-	err = testClient.Upload(&storage.FileInfo{
-		FileName: "test/test.txt",
-	}, fileContant)
-	if err != nil {
-		t.Errorf("api return error: %s", err.Error())
 	}
 }
-
-// func TestConnect(t *testing.T) {
-// 	t.Errorf("TBD")
-// }
+func createMockS3List(ctrl *gomock.Controller) *mock_s3_sdk.MockS3API {
+	mock := mock_s3_sdk.NewMockS3API(ctrl)
+	dates := []struct {
+		prefix string   // input: filename
+		list   []string // output: database list
+	}{
+		{"user/test/2018-05-06", []string{
+			"user/test/2018-05-06/1/t.db",
+			"user/test/2018-05-06/2/t.db",
+			"user/test/2018-05-06/3/t.db"}},
+		{"user/test/2018-05-08", []string{
+			"user/test/2018-05-08/1/t.db",
+			"user/test/2018-05-08/2/t.db",
+			"user/test/2018-05-08/3/t.db"}},
+		{"user/test/2018-05-09", []string{
+			"user/test/2018-05-09/1/t.db",
+			"user/test/2018-05-09/2/t.db"}},
+		{"user/test/2018-05-10", []string{
+			"user/test/2018-05-10/1/t.db",
+			"user/test/2018-05-10/2/t.db"}},
+		{"user/test/2018-05-11", []string{
+			"user/test/2018-05-11/1/t.db"}},
+	}
+	mock.EXPECT().ListObjectsV2(gomock.Any()).
+		DoAndReturn(func(input *s3.ListObjectsV2Input) (*s3.ListObjectsV2Output, error) {
+			for _, dd := range dates {
+				if *input.Prefix == dd.prefix {
+					out := new(s3.ListObjectsV2Output)
+					out.Contents = make([]*s3.Object, len(dd.list))
+					for i := range dd.list {
+						out.Contents[i].Key = &(dd.list[i])
+					}
+					return out, nil
+				}
+			}
+			return nil, nil
+		}).AnyTimes()
+	return mock
+}
