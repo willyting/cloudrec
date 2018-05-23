@@ -67,8 +67,22 @@ func TestListDb(t *testing.T) {
 		wantStatus int
 	}{
 		// TODO: Add test cases.
-		{"on-day", req{"http://localhost/recstorage/test/date?s=2018-05-08&e=2018-05-08", "user"},
-			"{\"2018-05-08\":[\"2018-05-08/001/2018-05-08.db\",\"2018-05-08/002/2018-05-08.db\",\"2018-05-08/003/2018-05-08.db\"]}", 200},
+		{"one-day", req{"http://localhost/recstorage/test/date?s=2018-11-08&e=2018-05-11", "user"},
+			"{\"2018-05-11\":[\"2018-05-11/1/t.db\"]}", 200},
+		{"one-day-more-db", req{"http://localhost/recstorage/test/date?s=2018-05-08&e=2018-05-08", "user"},
+			"{\"2018-05-08\":[\"2018-05-08/1/t.db\",\"2018-05-08/2/t.db\",\"2018-05-08/3/t.db\"]}", 200},
+		{"two-day", req{"http://localhost/recstorage/test/date?s=2018-05-08&e=2018-05-09", "user"},
+			"{\"2018-05-08\":[\"2018-05-08/1/t.db\",\"2018-05-08/2/t.db\",\"2018-05-08/3/t.db\"],\"2018-05-09\":[\"2018-05-09/1/t.db\",\"2018-05-09/2/t.db\"]}", 200},
+		{"more-day", req{"http://localhost/recstorage/test/date?s=2018-05-06&e=2018-05-10", "user"},
+			"{\"2018-05-06\":[\"2018-05-06/1/t.db\",\"2018-05-06/2/t.db\",\"2018-05-06/3/t.db\"],\"2018-05-08\":[\"2018-05-08/1/t.db\",\"2018-05-08/2/t.db\",\"2018-05-08/3/t.db\"],\"2018-05-09\":[\"2018-05-09/1/t.db\",\"2018-05-09/2/t.db\"],\"2018-05-10\":[\"2018-05-10/1/t.db\",\"2018-05-10/2/t.db\"]}", 200},
+		{"more-day-invert", req{"http://localhost/recstorage/test/date?s=2018-05-10&e=2018-05-06", "user"},
+			"{\"2018-05-06\":[\"2018-05-06/1/t.db\",\"2018-05-06/2/t.db\",\"2018-05-06/3/t.db\"],\"2018-05-08\":[\"2018-05-08/1/t.db\",\"2018-05-08/2/t.db\",\"2018-05-08/3/t.db\"],\"2018-05-09\":[\"2018-05-09/1/t.db\",\"2018-05-09/2/t.db\"],\"2018-05-10\":[\"2018-05-10/1/t.db\",\"2018-05-10/2/t.db\"]}", 200},
+		{"no-db-first-day", req{"http://localhost/recstorage/test/date?s=2018-05-04&e=2018-05-10", "user"},
+			"{\"2018-05-06\":[\"2018-05-06/1/t.db\",\"2018-05-06/2/t.db\",\"2018-05-06/3/t.db\"],\"2018-05-08\":[\"2018-05-08/1/t.db\",\"2018-05-08/2/t.db\",\"2018-05-08/3/t.db\"],\"2018-05-09\":[\"2018-05-09/1/t.db\",\"2018-05-09/2/t.db\"],\"2018-05-10\":[\"2018-05-10/1/t.db\",\"2018-05-10/2/t.db\"]}", 200},
+		{"moer-day-no-db", req{"http://localhost/recstorage/test/date?s=2018-05-01&e=2018-05-05", "user"},
+			"{}", 200},
+		{"no-db-first-last-day", req{"http://localhost/recstorage/test/date?s=2018-05-05&e=2018-05-07", "user"},
+			"{\"2018-05-06\":[\"2018-05-06/1/t.db\",\"2018-05-06/2/t.db\",\"2018-05-06/3/t.db\"]}", 200},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -78,7 +92,7 @@ func TestListDb(t *testing.T) {
 				t.Errorf("handler returned wrong status code: got %d want %d", status, tt.wantStatus)
 			}
 			if gotBody := rr.Body.String(); gotBody != tt.want {
-				t.Errorf("handler returned unexpected body: got %s want %s", gotBody, tt.want)
+				t.Errorf("handler returned unexpected body: got \n%s want \n%s", gotBody, tt.want)
 			}
 		})
 	}
@@ -100,27 +114,31 @@ func createMockList(ctrl *gomock.Controller) *mocks.MockLister {
 		list   []string // output: database list
 	}{
 		{"user/test/2018-05-06", []string{
-			"user/test/2018-05-06/001/2018-05-06.db",
-			"user/test/2018-05-06/002/2018-05-06.db",
-			"user/test/2018-05-06/003/2018-05-06.db"}},
+			"user/test/2018-05-06/1/t.db",
+			"user/test/2018-05-06/2/t.db",
+			"user/test/2018-05-06/3/t.db"}},
 		{"user/test/2018-05-08", []string{
-			"user/test/2018-05-08/001/2018-05-08.db",
-			"user/test/2018-05-08/002/2018-05-08.db",
-			"user/test/2018-05-08/003/2018-05-08.db"}},
+			"user/test/2018-05-08/1/t.db",
+			"user/test/2018-05-08/2/t.db",
+			"user/test/2018-05-08/3/t.db"}},
 		{"user/test/2018-05-09", []string{
-			"user/test/2018-05-09/001/2018-05-09.db",
-			"user/test/2018-05-09/002/2018-05-09.db"}},
+			"user/test/2018-05-09/1/t.db",
+			"user/test/2018-05-09/2/t.db"}},
 		{"user/test/2018-05-10", []string{
-			"user/test/2018-05-10/001/2018-05-10.db",
-			"user/test/2018-05-10/002/2018-05-10.db"}},
+			"user/test/2018-05-10/1/t.db",
+			"user/test/2018-05-10/2/t.db"}},
 		{"user/test/2018-05-11", []string{
-			"user/test/2018-05-11/002/2018-05-11.db"}},
+			"user/test/2018-05-11/1/t.db"}},
 	}
-	for _, dd := range dates {
-		mock.EXPECT().List(&storage.FileInfo{
-			FileName: dd.prefix,
-		}).Return(dd.list, nil).AnyTimes()
-	}
-	mock.EXPECT().List(gomock.Any()).Return(nil, nil).AnyTimes()
+	mock.EXPECT().List(gomock.Any()).DoAndReturn(func(f *storage.FileInfo) ([]string, error) {
+		for _, dd := range dates {
+			if f.FileName == dd.prefix {
+				ret := make([]string, len(dd.list))
+				copy(ret, dd.list)
+				return ret, nil
+			}
+		}
+		return nil, nil
+	}).AnyTimes()
 	return mock
 }

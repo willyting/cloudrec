@@ -49,10 +49,12 @@ func ListDb(w http.ResponseWriter, r *http.Request) {
 	start, err := time.Parse("2006-01-02", startDate)
 	if err != nil {
 		fmt.Fprint(w, err)
+		return
 	}
 	end, err := time.Parse("2006-01-02", endDate)
 	if err != nil {
 		fmt.Fprint(w, err)
+		return
 	}
 	if start.After(end) {
 		tmp := start
@@ -68,13 +70,15 @@ func ListDb(w http.ResponseWriter, r *http.Request) {
 		})
 		if err != nil {
 			fmt.Fprint(w, err)
-			break
+			return
 		}
-		for i := range list {
-			list[i] = list[i][len(base):len(list[i])]
+		if list != nil {
+			for i := range list {
+				list[i] = list[i][len(base):len(list[i])]
+			}
+			recList[curDate] = list
 		}
-		recList[curDate] = list
-		break
+		start = start.AddDate(0, 0, 1)
 	}
 	result, err := json.Marshal(recList)
 	fmt.Fprint(w, string(result))
