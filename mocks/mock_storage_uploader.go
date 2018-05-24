@@ -35,7 +35,7 @@ func (m *MockUploader) EXPECT() *MockUploaderMockRecorder {
 }
 
 // Upload mocks base method
-func (m *MockUploader) Upload(arg0 *storage.FileInfo, arg1 io.Reader) error {
+func (m *MockUploader) Upload(arg0 *storage.FileInfo, arg1 io.ReadCloser) error {
 	ret := m.ctrl.Call(m, "Upload", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0

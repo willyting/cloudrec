@@ -2,9 +2,9 @@ package storage
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -47,12 +47,12 @@ func (s *S3Client) Download(file *FileInfo, writeTo io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if client == nil {
-		return fmt.Errorf("create client fail")
-	}
-	out, _ := client.GetObject(&s3.GetObjectInput{
+	out, err := client.GetObject(&s3.GetObjectInput{
 		Key: aws.String(file.FileName),
 	})
+	if err != nil {
+		return err
+	}
 	_, err = io.Copy(writeTo, out.Body)
 	out.Body.Close()
 	if err != nil {
@@ -62,28 +62,19 @@ func (s *S3Client) Download(file *FileInfo, writeTo io.Writer) error {
 }
 
 // Upload ...
-func (s *S3Client) Upload(file *FileInfo, readFrom io.Reader) error {
+func (s *S3Client) Upload(file *FileInfo, readFrom io.ReadCloser) error {
 	client, err := s.Connect(file)
 	if err != nil {
 		return err
 	}
-	if client == nil {
-		return fmt.Errorf("create client fail")
-	}
 	buffer, err := ioutil.ReadAll(readFrom)
-	if err != nil {
-		return err
-	}
-	readseeker := bytes.NewReader(buffer)
-	if err != nil {
-		return err
-	}
+	readFrom.Close()
 	if err != nil {
 		return err
 	}
 	_, err = client.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(file.Bucket),
-		Body:   io.ReadSeeker(readseeker),
+		Body:   io.ReadSeeker(bytes.NewReader(buffer)),
 		Key:    aws.String(file.FileName)})
 	if err != nil {
 		return err
@@ -93,10 +84,28 @@ func (s *S3Client) Upload(file *FileInfo, readFrom io.Reader) error {
 
 // List ...
 func (s *S3Client) List(file *FileInfo) ([]string, error) {
-	return nil, fmt.Errorf("TBD")
+	client, err := s.Connect(file)
+	if err != nil {
+		return nil, err
+	}
+	out, err := client.ListObjectsV2(&s3.ListObjectsV2Input{
+		Bucket: aws.String(file.Bucket),
+		Prefix: aws.String(file.FileName),
+	})
+	if err != nil {
+		return nil, err
+	}
+	var list []string
+	for _, obj := range out.Contents {
+		if filepath.Ext(*obj.Key) == ".db" {
+			list = append(list, *obj.Key)
+		}
+	}
+	return list, nil
 }
 
-// Connect ...
+// Connect return a storage client support all s3 API
+// return client on success, and return nil and an error on fail
 func (s *S3Connecter) Connect(file *FileInfo) (s3iface.S3API, error) {
 	cred := credentials.NewStaticCredentials(file.AccessKeyID, file.SecretKey, file.SessionToken)
 	cred.Get()

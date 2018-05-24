@@ -11,8 +11,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//go:generate $GOPATH/bin/mockgen -destination src/GaChaMachine/mocks/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
-
 var cloud storage.Storage
 
 // GetHandlers ...
@@ -47,7 +45,6 @@ func PutRec(w http.ResponseWriter, r *http.Request) {
 	cloud.GetUploader().Upload(&storage.FileInfo{
 		FileName: base + filePath,
 	}, r.Body)
-	r.Body.Close()
 }
 
 // ListDb ...

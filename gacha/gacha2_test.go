@@ -1,5 +1,7 @@
 package gacha
 
+//go:generate $GOPATH/bin/mockgen -destination /src/GaChaMachine/mocks/mock_storage_uploader.go -package mocks GaChaMachine/storage Uploader
+//go:generate $GOPATH/bin/mockgen -destination /src/GaChaMachine/mocks/mock_storage_downloader.go -package mocks GaChaMachine/storage Downloader
 import (
 	"GaChaMachine/mocks"
 	"GaChaMachine/storage"

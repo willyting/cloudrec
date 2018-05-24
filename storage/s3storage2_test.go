@@ -1,5 +1,6 @@
 package storage
 
+//go:generate $GOPATH/bin/mockgen -destination src/GaChaMachine/mock_s3_sdk/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 import (
 	"GaChaMachine/mock_s3_sdk"
 	"bytes"
@@ -11,8 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/golang/mock/gomock"
 )
-
-//go:generate $GOPATH/bin/mockgen -destination src/GaChaMachine/mocks/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 
 type mockS3Connecter struct {
 	MockClient *mock_s3_sdk.MockS3API
@@ -54,7 +53,6 @@ func TestUpload(t *testing.T) {
 	mockClient := mock_s3_sdk.NewMockS3API(mockCtrl)
 	connector := &mockS3Connecter{MockClient: mockClient}
 	testClient := &S3Client{Connecter: connector}
-	fileContant := strings.NewReader(expected)
 	mockClient.EXPECT().PutObject(gomock.Any()).Return(&s3.PutObjectOutput{}, nil).
 		Do(func(in *s3.PutObjectInput) {
 			if *(in.Key) != testFilename {
@@ -70,7 +68,7 @@ func TestUpload(t *testing.T) {
 		})
 	err = testClient.Upload(&FileInfo{
 		FileName: "test/test.txt",
-	}, fileContant)
+	}, ioutil.NopCloser(strings.NewReader(expected)))
 	if err != nil {
 		t.Errorf("api return error: %s", err.Error())
 	}
