@@ -44,7 +44,7 @@ romfs: all
 
 dep:
 	cd $(PKGDIR)
-	$(GOPATH)/bin/dep ensure
+	env DEPNOLOCK=1 $(GOPATH)/bin/dep ensure -v
 	cd -
 
 .PHONY: $(PHONY)
