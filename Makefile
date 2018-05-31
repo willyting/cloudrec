@@ -19,6 +19,7 @@
 #
 PKG := gachamachine
 
+PKGDIR := $(GOPATH)/src/$(PKG)
 OUTPUTDIR := $(GOPATH)/src/$(PKG)
 BINARY := $(OUTPUTDIR)/$(PKG)
 export OUTPUTDIR
@@ -27,8 +28,8 @@ HOST_NCPU ?= 1
 export HOST_NCPU
 
 PHONY += all
-all:
-	go build $(PKG) -o $(BINARY)
+all: dep
+	go build -v -o $(BINARY) $(PKG)
 
 PHONY += clean
 clean:
@@ -40,5 +41,10 @@ distclean: clean
 
 PHONY += romfs
 romfs: all
+
+dep:
+	cd $(PKGDIR)
+	$(GOPATH)/bin/dep ensure
+	cd -
 
 .PHONY: $(PHONY)
