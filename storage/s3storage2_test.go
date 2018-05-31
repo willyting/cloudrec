@@ -1,9 +1,9 @@
 package storage
 
-//go:generate $GOPATH/bin/mockgen -destination src/GaChaMachine/mock_s3_sdk/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
+//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mock_s3_sdk/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 import (
-	"GaChaMachine/mock_s3_sdk"
 	"bytes"
+	"gachamachine/mock_s3_sdk"
 	"io/ioutil"
 	"strings"
 	"testing"

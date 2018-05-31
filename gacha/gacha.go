@@ -1,10 +1,10 @@
 package gacha
 
 import (
-	"GaChaMachine/machine"
-	"GaChaMachine/storage"
 	"encoding/json"
 	"fmt"
+	"gachamachine/machine"
+	"gachamachine/storage"
 	"net/http"
 	"time"
 

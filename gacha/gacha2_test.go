@@ -1,12 +1,13 @@
 package gacha
 
-//go:generate $GOPATH/bin/mockgen -destination /src/GaChaMachine/mocks/mock_storage_uploader.go -package mocks GaChaMachine/storage Uploader
-//go:generate $GOPATH/bin/mockgen -destination /src/GaChaMachine/mocks/mock_storage_downloader.go -package mocks GaChaMachine/storage Downloader
+//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mocks/mock_storage_uploader.go -package mocks gachamachine/storage Uploader
+//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mocks/mock_storage_downloader.go -package mocks gachamachine/storage Downloader
+//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mocks/mock_storage_lister.go -package mocks gachamachine/storage Lister
 import (
-	"GaChaMachine/mocks"
-	"GaChaMachine/storage"
 	"bytes"
 	"fmt"
+	"gachamachine/mocks"
+	"gachamachine/storage"
 	"io"
 	"io/ioutil"
 	"net/http"

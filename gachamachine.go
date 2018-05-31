@@ -1,8 +1,8 @@
 package main
 
 import (
-	"GaChaMachine/gacha"
-	"GaChaMachine/machine"
+	"gachamachine/gacha"
+	"gachamachine/machine"
 	"os"
 	"strconv"
 )
