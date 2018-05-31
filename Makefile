@@ -28,7 +28,7 @@ HOST_NCPU ?= 1
 export HOST_NCPU
 
 PHONY += all
-all: dep
+all: 
 	go build -v -o $(BINARY) $(PKG)
 
 PHONY += clean
