@@ -14,6 +14,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/gorilla/mux"
 
 	"github.com/golang/mock/gomock"
@@ -42,8 +44,10 @@ func TestGetRec_(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockStroage := mocks.NewMockDownloader(mockCtrl)
 	testCloud := &mockStorage{Down: mockStroage}
-	cloud = testCloud
+	defaultService.cloud = testCloud
 	mockStroage.EXPECT().Download(&storage.FileInfo{
+		Region:   "ap-southeast-1",
+		Bucket:   "ec4f9e12-5286-11e8-9c2d-fa7ae01bbebc",
 		FileName: "user/test/test.txt",
 	}, gomock.Any()).
 		Return(nil).Do(func(f *storage.FileInfo, w io.Writer) {
@@ -56,16 +60,8 @@ func TestGetRec_(t *testing.T) {
 	req.Header.Add("X-identityID", "user")
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %d want %d",
-			status, http.StatusOK)
-	}
-	expected := "test"
-	buf, err := ioutil.ReadAll(rr.Body)
-	if string(buf) != expected {
-		t.Errorf("handler returned unexpected body: got %s want %s",
-			string(buf), expected)
-	}
+	assert.Equal(t, http.StatusOK, rr.Code, "response status incorrect")
+	assert.Equal(t, "test", rr.Body.String(), "response body incorrect")
 }
 
 func TestPutRec_(t *testing.T) {
@@ -78,20 +74,19 @@ func TestPutRec_(t *testing.T) {
 	defer mockCtrl.Finish()
 	mockStroage := mocks.NewMockUploader(mockCtrl)
 	testCloud := &mockStorage{Up: mockStroage}
-	cloud = testCloud
+	defaultService.cloud = testCloud
 	mockStroage.EXPECT().Upload(&storage.FileInfo{
+		Region:   "ap-southeast-1",
+		Bucket:   "ec4f9e12-5286-11e8-9c2d-fa7ae01bbebc",
 		FileName: "user/test/test.txt",
 	}, gomock.Any()).
 		Return(nil).Do(func(f *storage.FileInfo, r io.Reader) {
 		// THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
-		expected := "test"
 		stroageBuf, errF := ioutil.ReadAll(r)
 		if errF != nil {
 			t.Errorf(errF.Error())
 		}
-		if string(stroageBuf) != expected {
-			t.Errorf("incorrect file got: %s, want: %s", string(stroageBuf), expected)
-		}
+		assert.Equal(t, "test", string(stroageBuf), "incorrect file contant")
 	})
 
 	// GIVE: cameraID = "test" and filename = "test.txt" in URL, userID="user" in header
@@ -107,8 +102,63 @@ func TestPutRec_(t *testing.T) {
 	router.ServeHTTP(rr, req)
 
 	// THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %d want %d",
-			status, http.StatusOK)
+	assert.Equal(t, http.StatusOK, rr.Code, "response status incorrect")
+}
+
+func TestGetRec_default(t *testing.T) {
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockStroage := mocks.NewMockDownloader(mockCtrl)
+	testCloud := &mockStorage{Down: mockStroage}
+	defaultService.cloud = testCloud
+	mockStroage.EXPECT().Download(&storage.FileInfo{
+		Region:   "ap-southeast-1",
+		Bucket:   "ec4f9e12-5286-11e8-9c2d-fa7ae01bbebc",
+		FileName: "user/test/test.txt",
+	}, gomock.Any()).Return(nil)
+	req, err := http.NewRequest("GET", "http://localhost/recstorage/test?p=test.txt", nil)
+	if err != nil {
+		t.Fatal(err)
 	}
+	req.Header.Add("X-identityID", "user")
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusOK, rr.Code, "response status incorrect")
+}
+
+func TestGetRec_noUserID(t *testing.T) {
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockStroage := mocks.NewMockDownloader(mockCtrl)
+	testCloud := &mockStorage{Down: mockStroage}
+	defaultService.cloud = testCloud
+	mockStroage.EXPECT().Download(gomock.Any(), gomock.Any()).Return(nil).Times(0)
+	req, err := http.NewRequest("GET", "http://localhost/recstorage/test?p=test.txt", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "response status incorrect")
+}
+func TestPutRec_noUserID(t *testing.T) {
+	router := mux.NewRouter().StrictSlash(true)
+	router.Methods("POST").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(PutRec)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockStroage := mocks.NewMockUploader(mockCtrl)
+	testCloud := &mockStorage{Up: mockStroage}
+	defaultService.cloud = testCloud
+	mockStroage.EXPECT().Upload(gomock.Any(), gomock.Any()).Return(nil).Times(0)
+	req, err := http.NewRequest("POST", "http://localhost/recstorage/test?p=test.txt", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code, "response status incorrect")
 }

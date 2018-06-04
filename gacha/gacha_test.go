@@ -1,8 +1,5 @@
 package gacha
 
-//go:generate $GOPATH/bin/mockgen -destination /src/gachamachine/mocks/mock_storage_uploader.go -package mocks gachamachine/storage Uploader
-//go:generate $GOPATH/bin/mockgen -destination /src/gachamachine/mocks/mock_storage_downloader.go -package mocks gachamachine/storage Downloader
-//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mocks/mock_storage_lister.go -package mocks gachamachine/storage Lister
 import (
 	"fmt"
 	"gachamachine/mocks"
@@ -48,7 +45,7 @@ func TestGetRec_Crendential(t *testing.T) {
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	cloud = &mockStorage{Down: createMockCredGetRec(mockCtrl)}
+	defaultService.cloud = &mockStorage{Down: createMockCredGetRec(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
 	tests := getGetRec_Cred_TestCase()
@@ -124,7 +121,7 @@ func TestPutRec(t *testing.T) {
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	cloud = &mockStorage{Up: createMockCredPutRec(mockCtrl)}
+	defaultService.cloud = &mockStorage{Up: createMockCredPutRec(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("POST").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(PutRec)
 	tests := getGetRec_Cred_TestCase()
@@ -166,7 +163,7 @@ func TestListDb(t *testing.T) {
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	cloud = &mockStorage{List: createMockList(mockCtrl)}
+	defaultService.cloud = &mockStorage{List: createMockList(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}/date").Name("testListDb").HandlerFunc(ListDb)
 	tests := getListDB_TestCase()
@@ -267,7 +264,7 @@ func TestListDb_Crendential(t *testing.T) {
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	cloud = &mockStorage{List: createMockCredList(mockCtrl)}
+	defaultService.cloud = &mockStorage{List: createMockCredList(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}/date").Name("testListDb").HandlerFunc(ListDb)
 	tests := getListDB_Cred_TestCase()
@@ -357,4 +354,88 @@ func addCredHeader(r *http.Request, c *aws_Cred, t *testing.T) *http.Request {
 	r.Header.Add("X-secretKey", c.Key)
 	r.Header.Add("X-sessionToken", c.Token)
 	return r
+}
+
+func TestSetRegion(t *testing.T) {
+	type args struct {
+		r string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{"change", args{"eu-central-1"}, "eu-central-1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetRegion(tt.args.r)
+			assert.Equal(t, tt.want, defaultService.region, "set region fail")
+		})
+	}
+}
+
+func TestService_SetRegion(t *testing.T) {
+	type args struct {
+		r string
+	}
+	tests := []struct {
+		name string
+		s    *Service
+		args args
+		want *Service
+	}{
+		// TODO: Add test cases.
+		{"new", &Service{}, args{"ap-southeast-2"}, &Service{region: "ap-southeast-2"}},
+		{"change", &Service{region: "ap-southeast-1"}, args{"eu-central-1"}, &Service{region: "eu-central-1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.s.SetRegion(tt.args.r)
+			assert.EqualValues(t, tt.want, got, "set region fail")
+		})
+	}
+}
+
+func TestSetBucket(t *testing.T) {
+	type args struct {
+		b string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{"change", args{"aaaa-bbbb-cccccccccccccc-dddd"}, "aaaa-bbbb-cccccccccccccc-dddd"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetBucket(tt.args.b)
+			assert.Equal(t, tt.want, defaultService.bucket, "set bucket fail")
+		})
+	}
+}
+
+func TestService_SetBucket(t *testing.T) {
+	type args struct {
+		b string
+	}
+	tests := []struct {
+		name string
+		s    *Service
+		args args
+		want *Service
+	}{
+		// TODO: Add test cases.
+		{"new", &Service{}, args{"aaaaa-bbb-ccccccc-dddd"}, &Service{bucket: "aaaaa-bbb-ccccccc-dddd"}},
+		{"change", &Service{bucket: "xxxxx-hhh-ccccccc-yyyy"}, args{"aaaaa-eee-ccccccc-gggg"}, &Service{bucket: "aaaaa-eee-ccccccc-gggg"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.s.SetBucket(tt.args.b)
+			assert.Equal(t, tt.want, got, "set bucket fail")
+		})
+	}
 }

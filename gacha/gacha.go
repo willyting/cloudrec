@@ -11,27 +11,70 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var cloud storage.Storage
+// Service ...
+type Service struct {
+	cloud  storage.Storage
+	region string
+	bucket string
+}
+
+var defaultService = &Service{
+	cloud:  &storage.S3Stroage{},
+	region: "ap-southeast-1",
+	bucket: "ec4f9e12-5286-11e8-9c2d-fa7ae01bbebc",
+}
 
 // GetHandlers ...
 func GetHandlers() []machine.Route {
+	return defaultService.GetHandlers()
+}
+
+// GetHandlers ...
+func (s *Service) GetHandlers() []machine.Route {
 	return []machine.Route{
-		{Name: "playback", Method: "GET", Pattern: "/recstorage/{cameraid}", HandlerFunc: GetRec},
-		{Name: "record-post", Method: "POST", Pattern: "/recstorage/{cameraid}", HandlerFunc: PutRec},
-		{Name: "record-put", Method: "PUT", Pattern: "/recstorage/{cameraid}", HandlerFunc: PutRec},
-		{Name: "date-query", Method: "GET", Pattern: "/recstorage/{cameraid}/date", HandlerFunc: ListDb},
+		{Name: "playback", Method: "GET", Pattern: "/recstorage/{cameraid}", HandlerFunc: s.GetRec},
+		{Name: "record-post", Method: "POST", Pattern: "/recstorage/{cameraid}", HandlerFunc: s.PutRec},
+		{Name: "record-put", Method: "PUT", Pattern: "/recstorage/{cameraid}", HandlerFunc: s.PutRec},
+		{Name: "date-query", Method: "GET", Pattern: "/recstorage/{cameraid}/date", HandlerFunc: s.ListDb},
 	}
+}
+
+// SetRegion ...
+func SetRegion(r string) {
+	defaultService.SetRegion(r)
+}
+
+// SetRegion ...
+func (s *Service) SetRegion(r string) *Service {
+	s.region = r
+	return s
+}
+
+// SetRegion ...
+func SetBucket(b string) {
+	defaultService.SetBucket(b)
+}
+
+// SetBucket ...
+func (s *Service) SetBucket(b string) *Service {
+	s.bucket = b
+	return s
 }
 
 // GetRec ...
 func GetRec(w http.ResponseWriter, r *http.Request) {
+	defaultService.GetRec(w, r)
+}
+
+// GetRec ...
+func (s *Service) GetRec(w http.ResponseWriter, r *http.Request) {
 	base, err := getUserCamPath(w, r)
 	if err != nil {
 		return
 	}
-	authInfo := getCredentialInfo(r)
+	authInfo := s.infoParser(r)
 	authInfo.FileName = base + r.URL.Query().Get("p")
-	err = cloud.GetDownloader().Download(authInfo, w)
+	err = s.cloud.GetDownloader().Download(authInfo, w)
 	if err != nil {
 		http.Error(w, "401 permission denied", 401)
 		return
@@ -40,13 +83,18 @@ func GetRec(w http.ResponseWriter, r *http.Request) {
 
 // PutRec ...
 func PutRec(w http.ResponseWriter, r *http.Request) {
+	defaultService.PutRec(w, r)
+}
+
+// PutRec ...
+func (s *Service) PutRec(w http.ResponseWriter, r *http.Request) {
 	base, err := getUserCamPath(w, r)
 	if err != nil {
 		return
 	}
-	authInfo := getCredentialInfo(r)
+	authInfo := s.infoParser(r)
 	authInfo.FileName = base + r.URL.Query().Get("p")
-	err = cloud.GetUploader().Upload(authInfo, r.Body)
+	err = s.cloud.GetUploader().Upload(authInfo, r.Body)
 	if err != nil {
 		http.Error(w, "401 permission denied", 401)
 		return
@@ -55,6 +103,11 @@ func PutRec(w http.ResponseWriter, r *http.Request) {
 
 // ListDb ...
 func ListDb(w http.ResponseWriter, r *http.Request) {
+	defaultService.ListDb(w, r)
+}
+
+// ListDb ...
+func (s *Service) ListDb(w http.ResponseWriter, r *http.Request) {
 	base, err := getUserCamPath(w, r)
 	if err != nil {
 		return
@@ -74,8 +127,8 @@ func ListDb(w http.ResponseWriter, r *http.Request) {
 		start = end
 		end = tmp
 	}
-	authInfo := getCredentialInfo(r)
-	lister := cloud.GetLister()
+	authInfo := s.infoParser(r)
+	lister := s.cloud.GetLister()
 	recList := make(map[string][]string)
 	for !start.After(end) {
 		curDate := start.Format("2006-01-02")
@@ -97,6 +150,19 @@ func ListDb(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(result))
 }
 
+func (s *Service) infoParser(r *http.Request) *storage.FileInfo {
+	f := s.newDefaultInfo()
+	setCredentialInfo(f, r)
+	return f
+}
+
+func (s *Service) newDefaultInfo() *storage.FileInfo {
+	return &storage.FileInfo{
+		Region: s.region,
+		Bucket: s.bucket,
+	}
+}
+
 func getUserCamPath(w http.ResponseWriter, r *http.Request) (string, error) {
 	vars := mux.Vars(r)
 	cameraID := vars["cameraid"]
@@ -108,10 +174,8 @@ func getUserCamPath(w http.ResponseWriter, r *http.Request) (string, error) {
 	return userID + "/" + cameraID + "/", nil
 }
 
-func getCredentialInfo(r *http.Request) *storage.FileInfo {
-	return &storage.FileInfo{
-		AccessKeyID:  r.Header.Get("X-accessKeyID"),
-		SecretKey:    r.Header.Get("X-secretKey"),
-		SessionToken: r.Header.Get("X-sessionToken"),
-	}
+func setCredentialInfo(f *storage.FileInfo, r *http.Request) {
+	f.AccessKeyID = r.Header.Get("X-accessKeyID")
+	f.SecretKey = r.Header.Get("X-secretKey")
+	f.SessionToken = r.Header.Get("X-sessionToken")
 }

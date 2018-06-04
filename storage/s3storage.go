@@ -32,12 +32,17 @@ type S3Connecter struct {
 }
 
 // GetDownloader ...
-func (s *S3Stroage) GetDownloader() *S3Client {
+func (s *S3Stroage) GetDownloader() Downloader {
 	return &S3Client{Connecter: &S3Connecter{}}
 }
 
 // GetUploader ...
-func (s *S3Stroage) GetUploader() *S3Client {
+func (s *S3Stroage) GetUploader() Uploader {
+	return &S3Client{Connecter: &S3Connecter{}}
+}
+
+// GetLister ...
+func (s *S3Stroage) GetLister() Lister {
 	return &S3Client{Connecter: &S3Connecter{}}
 }
 
