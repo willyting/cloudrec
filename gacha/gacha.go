@@ -50,7 +50,7 @@ func (s *Service) SetRegion(r string) *Service {
 	return s
 }
 
-// SetRegion ...
+// SetBucket ...
 func SetBucket(b string) {
 	defaultService.SetBucket(b)
 }
@@ -58,6 +58,17 @@ func SetBucket(b string) {
 // SetBucket ...
 func (s *Service) SetBucket(b string) *Service {
 	s.bucket = b
+	return s
+}
+
+// SetStorage ...
+func SetStorage(c storage.Storage) {
+	defaultService.SetStorage(c)
+}
+
+// SetStorage ...
+func (s *Service) SetStorage(c storage.Storage) *Service {
+	s.cloud = c
 	return s
 }
 
