@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -71,7 +71,22 @@ func (s *FileOperator) Upload(file *FileInfo, readFrom io.ReadCloser) error {
 
 // List ...
 func (s *FileOperator) List(file *FileInfo) ([]string, error) {
-	return nil, fmt.Errorf("not implement")
+	f, err := os.Open("./storage/")
+	if err != nil {
+		return nil, err
+	}
+	files, err := f.Readdirnames(-1)
+	if err != nil {
+		return nil, err
+	}
+	filter := strings.Replace(file.FileName, "/", ".", -1)
+	var list []string
+	for _, ff := range files {
+		if strings.Contains(ff, filter) && filepath.Ext(ff) == ".db" {
+			list = append(list, strings.Replace(ff, ".", "/", 4))
+		}
+	}
+	return list, nil
 }
 
 // Open return client on success, and return nil and an error on fail
