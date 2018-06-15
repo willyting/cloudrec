@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"gachamachine/storage/iface"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 // SystemOperator ...
 type SystemOperator interface {
 	Open(*FileInfo) (io.ReadWriteCloser, error)
+	OpenDir(*FileInfo) (iface.FolderOperator, error)
 }
 
 // LocalStroage ...
@@ -71,7 +73,7 @@ func (s *FileOperator) Upload(file *FileInfo, readFrom io.ReadCloser) error {
 
 // List ...
 func (s *FileOperator) List(file *FileInfo) ([]string, error) {
-	f, err := os.Open("./storage/")
+	f, err := s.OpenDir(file)
 	if err != nil {
 		return nil, err
 	}
@@ -92,4 +94,9 @@ func (s *FileOperator) List(file *FileInfo) ([]string, error) {
 // Open return client on success, and return nil and an error on fail
 func (s *LocalFileSystem) Open(file *FileInfo) (io.ReadWriteCloser, error) {
 	return os.OpenFile("./storage/"+strings.Replace(file.FileName, "/", ".", -1), os.O_CREATE|os.O_WRONLY, 0666)
+}
+
+// OpenDir return client on success, and return nil and an error on fail
+func (s *LocalFileSystem) OpenDir(file *FileInfo) (iface.FolderOperator, error) {
+	return os.Open("./storage/")
 }

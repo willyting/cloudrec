@@ -1,13 +1,14 @@
 package storage
 
-//go:generate $GOPATH/bin/mockgen -destination src/gachamachine/mock_s3_sdk/mock_s3_client.go -package mocks github.com/aws/aws-sdk-go/service/s3/s3iface S3API
 import (
 	"gachamachine/mock_s3_sdk"
 	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestS3Client_List(t *testing.T) {
@@ -40,13 +41,10 @@ func TestS3Client_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.s.List(tt.args.file)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("S3Client.List() error = %v, wantErr %v", err, tt.wantErr)
+			if !assert.EqualValues(t, tt.wantErr, (err != nil)) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("S3Client.List() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -103,4 +101,31 @@ func createMockS3List(ctrl *gomock.Controller) *mock_s3_sdk.MockS3API {
 			return nil, nil
 		}).AnyTimes()
 	return mock
+}
+
+func TestS3Connecter_Connect(t *testing.T) {
+	type args struct {
+		file *FileInfo
+	}
+	tests := []struct {
+		name    string
+		s       *S3Connecter
+		args    args
+		want    s3iface.S3API
+		wantErr bool
+	}{
+	// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.Connect(tt.args.file)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("S3Connecter.Connect() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("S3Connecter.Connect() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
