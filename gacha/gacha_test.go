@@ -18,13 +18,13 @@ type req struct {
 	url      string
 	userHead string
 }
-type aws_Cred struct {
-	Id    string // input: accessKeyID
+type awsCred struct {
+	ID    string // input: accessKeyID
 	Key   string // input: secretKey
 	Token string // input: filename
 }
 
-var mockCredentials = []aws_Cred{
+var mockCredentials = []awsCred{
 	{"aaaaaaaaaaaaaaaaaaaaa",
 		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		""},
@@ -33,14 +33,14 @@ var mockCredentials = []aws_Cred{
 		"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"},
 }
 
-type rec_cred_Case struct {
+type recCredCase struct {
 	name       string
-	cerd       *aws_Cred
+	cerd       *awsCred
 	want       string
 	wantStatus int
 }
 
-func TestGetRec_Crendential(t *testing.T) {
+func TestGetRecCrendential(t *testing.T) {
 	queryReq := &req{"http://localhost/recstorage/test?p=test.txt", "user"}
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
@@ -48,51 +48,51 @@ func TestGetRec_Crendential(t *testing.T) {
 	defaultService.cloud = &mockStorage{Down: createMockCredGetRec(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(GetRec)
-	tests := getGetRec_Cred_TestCase()
+	tests := getGetRecCredTestCase()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			router.ServeHTTP(rr, createReq_GetRec(queryReq, tt.cerd, t))
+			router.ServeHTTP(rr, createReqGetRec(queryReq, tt.cerd, t))
 			assert.Equal(t, tt.wantStatus, rr.Code, "wrong response status")
 			assert.Equal(t, tt.want, rr.Body.String(), "wrong response body")
 		})
 	}
 }
 
-func createReq_GetRec(r *req, c *aws_Cred, t *testing.T) *http.Request {
+func createReqGetRec(r *req, c *awsCred, t *testing.T) *http.Request {
 	return addCredHeader(createGetReq(r, t), c, t)
 }
 
-func getGetRec_Cred_TestCase() []rec_cred_Case {
-	return []rec_cred_Case{
+func getGetRecCredTestCase() []recCredCase {
+	return []recCredCase{
 		// TODO: Add test cases.
 		{"ami-user-cred",
-			&aws_Cred{"aaaaaaaaaaaaaaaaaaaaa",
+			&awsCred{"aaaaaaaaaaaaaaaaaaaaa",
 				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				""},
 			"test", 200},
 		{"temp-cred",
-			&aws_Cred{"tttttttttttttttttttt",
+			&awsCred{"tttttttttttttttttttt",
 				"dddddddddddddddddddddddddddddddddddddddd",
 				"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"},
 			"test", 200},
 		{"fail-cred",
-			&aws_Cred{"aaaaaaaaaaaaaaaaaa",
+			&awsCred{"aaaaaaaaaaaaaaaaaa",
 				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				""},
 			"401 permission denied\n", 401},
 		{"no-cred",
-			&aws_Cred{"",
+			&awsCred{"",
 				"",
 				""},
 			"401 permission denied\n", 401},
 		{"miss-id",
-			&aws_Cred{"",
+			&awsCred{"",
 				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				""},
 			"401 permission denied\n", 401},
 		{"miss-key",
-			&aws_Cred{"tttttttttttttttttttt",
+			&awsCred{"tttttttttttttttttttt",
 				"",
 				""},
 			"401 permission denied\n", 401},
@@ -104,7 +104,7 @@ func createMockCredGetRec(ctrl *gomock.Controller) *mocks.MockDownloader {
 	mock.EXPECT().Download(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(f *storage.FileInfo, w io.Writer) error {
 			for _, dd := range mockCredentials {
-				if f.AccessKeyID == dd.Id &&
+				if f.AccessKeyID == dd.ID &&
 					f.SecretKey == dd.Key &&
 					f.SessionToken == dd.Token {
 					fmt.Fprint(w, "test")
@@ -124,11 +124,11 @@ func TestPutRec(t *testing.T) {
 	defaultService.cloud = &mockStorage{Up: createMockCredPutRec(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("POST").Path("/recstorage/{cameraid}").Name("test").HandlerFunc(PutRec)
-	tests := getGetRec_Cred_TestCase()
+	tests := getGetRecCredTestCase()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			router.ServeHTTP(rr, createReq_PutRec(queryReq, tt.cerd, t))
+			router.ServeHTTP(rr, createReqPutRec(queryReq, tt.cerd, t))
 			assert.Equal(t, tt.wantStatus, rr.Code, "wrong response status")
 		})
 	}
@@ -138,7 +138,7 @@ func createMockCredPutRec(ctrl *gomock.Controller) *mocks.MockUploader {
 	mock.EXPECT().Upload(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(f *storage.FileInfo, r io.Reader) error {
 			for _, dd := range mockCredentials {
-				if f.AccessKeyID == dd.Id &&
+				if f.AccessKeyID == dd.ID &&
 					f.SecretKey == dd.Key &&
 					f.SessionToken == dd.Token {
 					return nil
@@ -148,11 +148,11 @@ func createMockCredPutRec(ctrl *gomock.Controller) *mocks.MockUploader {
 		}).AnyTimes()
 	return mock
 }
-func createReq_PutRec(r *req, c *aws_Cred, t *testing.T) *http.Request {
+func createReqPutRec(r *req, c *awsCred, t *testing.T) *http.Request {
 	return addCredHeader(createPostReq(r, t), c, t)
 }
 
-type listDB_Case struct {
+type listDBCase struct {
 	name       string
 	req        *req // input: info to create http req
 	want       string
@@ -166,18 +166,18 @@ func TestListDb(t *testing.T) {
 	defaultService.cloud = &mockStorage{List: createMockList(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}/date").Name("testListDb").HandlerFunc(ListDb)
-	tests := getListDB_TestCase()
+	tests := getListDBTestCase()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			router.ServeHTTP(rr, createReq_ListDb(tt.req, t))
+			router.ServeHTTP(rr, createReqListDB(tt.req, t))
 			assert.Equal(t, tt.wantStatus, rr.Code, "wrong response status")
 			assert.Equal(t, tt.want, rr.Body.String(), "wrong response body")
 		})
 	}
 }
 
-func createReq_ListDb(r *req, t *testing.T) *http.Request {
+func createReqListDB(r *req, t *testing.T) *http.Request {
 	req, err := http.NewRequest("GET", r.url, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -186,8 +186,8 @@ func createReq_ListDb(r *req, t *testing.T) *http.Request {
 	return req
 }
 
-func getListDB_TestCase() []listDB_Case {
-	return []listDB_Case{
+func getListDBTestCase() []listDBCase {
+	return []listDBCase{
 		// TODO: Add test cases.
 		{"one-day", &req{"http://localhost/recstorage/test/date?s=2018-11-08&e=2018-05-11", "user"},
 			"{\"2018-05-11\":[\"2018-05-11/1/t.db\"]}", 200},
@@ -252,14 +252,14 @@ func createMockList(ctrl *gomock.Controller) *mocks.MockLister {
 	return mock
 }
 
-type listDB_Cred_Case struct {
+type listDBCredCase struct {
 	name       string
-	cerd       *aws_Cred
+	cerd       *awsCred
 	want       string
 	wantStatus int
 }
 
-func TestListDb_Crendential(t *testing.T) {
+func TestListDBCrendential(t *testing.T) {
 	queryReq := &req{"http://localhost/recstorage/test/date?s=2018-05-11&e=2018-05-11", "user"}
 	// setup mock module
 	mockCtrl := gomock.NewController(t)
@@ -267,42 +267,42 @@ func TestListDb_Crendential(t *testing.T) {
 	defaultService.cloud = &mockStorage{List: createMockCredList(mockCtrl)}
 	router := mux.NewRouter().StrictSlash(true)
 	router.Methods("GET").Path("/recstorage/{cameraid}/date").Name("testListDb").HandlerFunc(ListDb)
-	tests := getListDB_Cred_TestCase()
+	tests := getListDBCredTestCase()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			router.ServeHTTP(rr, addCredHeader(createReq_ListDb(queryReq, t), tt.cerd, t))
+			router.ServeHTTP(rr, addCredHeader(createReqListDB(queryReq, t), tt.cerd, t))
 			assert.Equal(t, tt.wantStatus, rr.Code, "wrong response status")
 			assert.Equal(t, tt.want, rr.Body.String(), "wrong response body")
 		})
 	}
 }
 
-func getListDB_Cred_TestCase() []listDB_Cred_Case {
-	return []listDB_Cred_Case{
+func getListDBCredTestCase() []listDBCredCase {
+	return []listDBCredCase{
 		// TODO: Add test cases.
 		{"ami-user-cred",
-			&aws_Cred{"aaaaaaaaaaaaaaaaaaaaa",
+			&awsCred{"aaaaaaaaaaaaaaaaaaaaa",
 				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				""},
 			"{\"2018-05-11\":[\"2018-05-11/1/t.db\"]}", 200},
 		{"temp-cred",
-			&aws_Cred{"tttttttttttttttttttt",
+			&awsCred{"tttttttttttttttttttt",
 				"dddddddddddddddddddddddddddddddddddddddd",
 				"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"},
 			"{\"2018-05-11\":[\"2018-05-11/1/t.db\"]}", 200},
 		{"no-cred",
-			&aws_Cred{"",
+			&awsCred{"",
 				"",
 				""},
 			"401 permission denied\n", 401},
 		{"miss-id",
-			&aws_Cred{"",
+			&awsCred{"",
 				"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 				""},
 			"401 permission denied\n", 401},
 		{"miss-key",
-			&aws_Cred{"tttttttttttttttttttt",
+			&awsCred{"tttttttttttttttttttt",
 				"",
 				""},
 			"401 permission denied\n", 401},
@@ -316,7 +316,7 @@ func createMockCredList(ctrl *gomock.Controller) *mocks.MockLister {
 	mock := mocks.NewMockLister(ctrl)
 	mock.EXPECT().List(gomock.Any()).DoAndReturn(func(f *storage.FileInfo) ([]string, error) {
 		for _, dd := range mockCredentials {
-			if f.AccessKeyID == dd.Id &&
+			if f.AccessKeyID == dd.ID &&
 				f.SecretKey == dd.Key &&
 				f.SessionToken == dd.Token {
 				ret := make([]string, len(dbList))
@@ -349,8 +349,8 @@ func createPostReq(r *req, t *testing.T) *http.Request {
 	req.Header.Add("X-identityID", r.userHead)
 	return req
 }
-func addCredHeader(r *http.Request, c *aws_Cred, t *testing.T) *http.Request {
-	r.Header.Add("X-accessKeyID", c.Id)
+func addCredHeader(r *http.Request, c *awsCred, t *testing.T) *http.Request {
+	r.Header.Add("X-accessKeyID", c.ID)
 	r.Header.Add("X-secretKey", c.Key)
 	r.Header.Add("X-sessionToken", c.Token)
 	return r
@@ -376,7 +376,7 @@ func TestSetRegion(t *testing.T) {
 	}
 }
 
-func TestService_SetRegion(t *testing.T) {
+func TestServiceSetRegion(t *testing.T) {
 	type args struct {
 		r string
 	}
@@ -418,7 +418,7 @@ func TestSetBucket(t *testing.T) {
 	}
 }
 
-func TestService_SetBucket(t *testing.T) {
+func TestServiceSetBucket(t *testing.T) {
 	type args struct {
 		b string
 	}

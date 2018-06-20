@@ -54,9 +54,7 @@ func TestGetRec_(t *testing.T) {
 		fmt.Fprint(w, "test")
 	})
 	req, err := http.NewRequest("GET", "http://localhost/recstorage/test?p=test.txt", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	req.Header.Add("X-identityID", "user")
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
@@ -83,18 +81,14 @@ func TestPutRec_(t *testing.T) {
 		Return(nil).Do(func(f *storage.FileInfo, r io.Reader) {
 		// THEN: get ok response. storage will receive a new file on `S3:bucket/{userID}/{cameraID}/{filename}`
 		stroageBuf, errF := ioutil.ReadAll(r)
-		if errF != nil {
-			t.Errorf(errF.Error())
-		}
+		assert.NoError(t, errF)
 		assert.Equal(t, "test", string(stroageBuf), "incorrect file contant")
 	})
 
 	// GIVE: cameraID = "test" and filename = "test.txt" in URL, userID="user" in header
 	body := bytes.NewReader([]byte("test"))
 	req, err := http.NewRequest("POST", "http://localhost/recstorage/test?p=test.txt", body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	req.Header.Add("X-identityID", "user")
 	rr := httptest.NewRecorder()
 
@@ -138,9 +132,7 @@ func TestGetRec_noUserID(t *testing.T) {
 	defaultService.cloud = testCloud
 	mockStroage.EXPECT().Download(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 	req, err := http.NewRequest("GET", "http://localhost/recstorage/test?p=test.txt", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusUnauthorized, rr.Code, "response status incorrect")
@@ -155,9 +147,7 @@ func TestPutRec_noUserID(t *testing.T) {
 	defaultService.cloud = testCloud
 	mockStroage.EXPECT().Upload(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 	req, err := http.NewRequest("POST", "http://localhost/recstorage/test?p=test.txt", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusUnauthorized, rr.Code, "response status incorrect")

@@ -48,9 +48,7 @@ func TestFileOperator_Download(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			getRead := mockClient.EXPECT().Read(gomock.Any()).Times(1).DoAndReturn(func(p []byte) (n int, err error) {
-				if p == nil {
-					t.Error("buffer error")
-				}
+				assert.NotNil(t, p, "buffer error")
 				p[0] = 't'
 				p[1] = 'e'
 				p[2] = 's'
@@ -59,13 +57,11 @@ func TestFileOperator_Download(t *testing.T) {
 			})
 			mockClient.EXPECT().Read(gomock.Any()).After(getRead).Return(0, io.EOF)
 			writeTo := &bytes.Buffer{}
-			if err := tt.s.Download(tt.args.file, writeTo); (err != nil) != tt.wantErr {
-				t.Errorf("FileOperator.Download() error = %v, wantErr %v", err, tt.wantErr)
+			err := tt.s.Download(tt.args.file, writeTo)
+			if assert.EqualValues(t, tt.wantErr, err != nil) {
 				return
 			}
-			if gotWriteTo := writeTo.String(); gotWriteTo != tt.wantWriteTo {
-				t.Errorf("FileOperator.Download() = %v, want %v", gotWriteTo, tt.wantWriteTo)
-			}
+			assert.EqualValues(t, tt.wantWriteTo, writeTo.String())
 		})
 	}
 }
@@ -96,9 +92,8 @@ func TestFileOperator_Upload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient.EXPECT().Write([]byte(tt.wantWriteToMock)).Return(len(tt.wantWriteToMock), nil)
-			if err := tt.s.Upload(tt.args.file, tt.args.readFrom); (err != nil) != tt.wantErr {
-				t.Errorf("FileOperator.Upload() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			err := tt.s.Upload(tt.args.file, tt.args.readFrom)
+			assert.EqualValues(t, tt.wantErr, err != nil)
 		})
 	}
 }

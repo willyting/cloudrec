@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/golang/mock/gomock"
@@ -36,12 +38,8 @@ func TestDownload(t *testing.T) {
 	err := testDownloader.Download(&FileInfo{
 		FileName: "test/test.txt",
 	}, writer)
-	if err != nil {
-		t.Errorf("api return error: %s", err.Error())
-	}
-	if writer.String() != expected {
-		t.Errorf("file contant fail: got %s, want %s", writer.String(), expected)
-	}
+	assert.NoError(t, err)
+	assert.EqualValues(t, expected, writer.String())
 }
 
 func TestUpload(t *testing.T) {
@@ -55,21 +53,13 @@ func TestUpload(t *testing.T) {
 	testClient := &S3Client{Connecter: connector}
 	mockClient.EXPECT().PutObject(gomock.Any()).Return(&s3.PutObjectOutput{}, nil).
 		Do(func(in *s3.PutObjectInput) {
-			if *(in.Key) != testFilename {
-				t.Errorf("intput file name errror, got %s, want %s", *(in.Key), testFilename)
-			}
+			assert.EqualValues(t, testFilename, *(in.Key))
 			contant, err := ioutil.ReadAll(in.Body)
-			if err != nil {
-				t.Errorf("read buffer fail : %s", err.Error())
-			}
-			if string(contant) != expected {
-				t.Errorf("put object api, got %s want %s", contant, expected)
-			}
+			assert.NoError(t, err)
+			assert.EqualValues(t, expected, string(contant))
 		})
 	err = testClient.Upload(&FileInfo{
 		FileName: "test/test.txt",
 	}, ioutil.NopCloser(strings.NewReader(expected)))
-	if err != nil {
-		t.Errorf("api return error: %s", err.Error())
-	}
+	assert.EqualValues(t, nil, err)
 }

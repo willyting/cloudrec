@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRunServer_hello(t *testing.T) {
@@ -12,46 +14,24 @@ func TestRunServer_hello(t *testing.T) {
 	go server.Run(80)
 	defer server.stop()
 	resp, err := http.Get("http://localhost:80/")
-	if err != nil {
-		t.Error(err)
-	}
-	if resp.StatusCode != 200 {
-		t.Error("get a error status")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, 200, resp.StatusCode)
 	defer resp.Body.Close()
 	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Error(err)
-	}
-	if len(contents) <= 0 {
-		t.Error("no response")
-	}
-	if string(contents) != "hello world" {
-		t.Error("response incorrect")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, "hello world", contents)
 }
 func TestRunServer_hello_8080_port(t *testing.T) {
 	server := NewServer()
 	go server.Run(8080)
 	defer server.stop()
 	resp, err := http.Get("http://localhost:8080/")
-	if err != nil {
-		t.Error(err)
-	}
-	if resp.StatusCode != 200 {
-		t.Error("get a error status")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, 200, resp.StatusCode)
 	defer resp.Body.Close()
 	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Error(err)
-	}
-	if len(contents) <= 0 {
-		t.Error("no response")
-	}
-	if string(contents) != "hello world" {
-		t.Error("response incorrect")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, "hello world", contents)
 }
 
 // TODO : check the server log
@@ -70,21 +50,10 @@ func TestAddHandlers(t *testing.T) {
 	go server.Run(80)
 	defer server.stop()
 	resp, err := http.Get("http://localhost:80/hello")
-	if err != nil {
-		t.Error(err)
-	}
-	if resp.StatusCode != 200 {
-		t.Error("get a error status")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, 200, resp.StatusCode)
 	defer resp.Body.Close()
 	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Error(err)
-	}
-	if len(contents) <= 0 {
-		t.Error("no response")
-	}
-	if string(contents) != "hello world" {
-		t.Error("response incorrect")
-	}
+	assert.EqualValues(t, nil, err)
+	assert.EqualValues(t, "hello world", contents)
 }

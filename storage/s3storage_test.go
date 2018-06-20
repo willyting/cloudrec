@@ -2,7 +2,6 @@ package storage
 
 import (
 	"gachamachine/mock_s3_sdk"
-	"reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -119,13 +118,10 @@ func TestS3Connecter_Connect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.s.Connect(tt.args.file)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("S3Connecter.Connect() error = %v, wantErr %v", err, tt.wantErr)
+			if assert.EqualValues(t, tt.wantErr, err != nil) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("S3Connecter.Connect() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
