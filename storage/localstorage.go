@@ -93,7 +93,7 @@ func (s *FileOperator) List(file *FileInfo) ([]string, error) {
 
 // Open return client on success, and return nil and an error on fail
 func (s *LocalFileSystem) Open(file *FileInfo) (io.ReadWriteCloser, error) {
-	return os.OpenFile("./storage/"+strings.Replace(file.FileName, "/", ".", -1), os.O_CREATE|os.O_WRONLY, 0666)
+	return os.OpenFile("./storage/"+strings.Replace(file.FileName, "/", ".", -1), os.O_CREATE|os.O_RDWR, 0666)
 }
 
 // OpenDir return client on success, and return nil and an error on fail
