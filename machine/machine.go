@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 // Route is basic struct to add to router
@@ -49,11 +50,18 @@ func helloworld(w http.ResponseWriter, r *http.Request) {
 // AddHandlers ...
 func (s *Server) AddHandlers(routes []Route) error {
 	for _, route := range routes {
+		handler := cors.AllowAll().Handler(route.HandlerFunc)
 		s.router.
 			Methods(route.Method).
 			Path(route.Pattern).
 			Name(route.Name).
-			Handler(route.HandlerFunc)
+			Handler(handler)
+		headHhandler := cors.AllowAll().Handler(http.HandlerFunc(helloworld))
+		s.router.
+			Methods(http.MethodOptions).
+			Path(route.Pattern).
+			Name(route.Name + "Options").
+			Handler(headHhandler)
 	}
 	return nil
 }
